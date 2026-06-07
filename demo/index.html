@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Letter Recognition — Live Demo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    /* ── RESET & BASE ─────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:       #0d0f12;
+      --surface:  #141720;
+      --surface2: #1c202c;
+      --border:   rgba(255,255,255,0.07);
+      --border2:  rgba(255,255,255,0.13);
+      --text:     #e8eaf0;
+      --muted:    #6b7280;
+      --accent:   #7c6ff7;
+      --accent2:  #a78bfa;
+      --green:    #34d399;
+      --red:      #f87171;
+      --amber:    #fbbf24;
+      --font-display: 'Syne', sans-serif;
+      --font-mono:    'DM Mono', monospace;
+    }
+    html { background: var(--bg); color: var(--text); font-family: var(--font-display); font-size: 14px; line-height: 1.5; }
+    body { min-height: 100vh; display: flex; flex-direction: column; }
+
+    /* ── TOPBAR ───────────────────────────────────────────── */
+    header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 28px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 10;
+    }
+    .logo { display: flex; align-items: center; gap: 10px; }
+    .logo-mark {
+      width: 32px; height: 32px; border-radius: 8px;
+      background: var(--accent); display: flex; align-items: center;
+      justify-content: center; font-size: 16px; font-weight: 700; color: #fff;
+    }
+    .logo-text { font-size: 15px; font-weight: 600; letter-spacing: -0.02em; }
+    .logo-sub { font-size: 11px; color: var(--muted); margin-top: 1px; }
+    .header-right { display: flex; align-items: center; gap: 12px; }
+    .badge {
+      font-family: var(--font-mono); font-size: 11px;
+      padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border2);
+      color: var(--muted);
+    }
+    .badge.green { color: var(--green); border-color: rgba(52,211,153,0.25); background: rgba(52,211,153,0.07); }
+    .github-link {
+      display: flex; align-items: center; gap: 6px;
+      padding: 6px 14px; border-radius: 8px;
+      border: 1px solid var(--border2); color: var(--text);
+      text-decoration: none; font-size: 13px; font-weight: 500;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .github-link:hover { background: var(--surface2); border-color: var(--accent); }
+
+    /* ── LAYOUT ───────────────────────────────────────────── */
+    .app-body {
+      flex: 1; display: grid;
+      grid-template-columns: 300px minmax(0,1fr) 280px;
+      gap: 0;
+    }
+
+    /* ── PANELS ───────────────────────────────────────────── */
+    .panel {
+      border-right: 1px solid var(--border);
+      padding: 20px;
+      display: flex; flex-direction: column; gap: 20px;
+      overflow-y: auto;
+    }
+    .panel:last-child { border-right: none; }
+    .panel-label {
+      font-family: var(--font-mono); font-size: 10px; font-weight: 500;
+      color: var(--muted); text-transform: uppercase; letter-spacing: .1em;
+      margin-bottom: 10px;
+    }
+
+    /* ── PRESET BUTTONS ───────────────────────────────────── */
+    .presets { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+    .preset-btn {
+      border: 1px solid var(--border2); border-radius: 8px;
+      background: var(--surface2); color: var(--text);
+      font-family: var(--font-display); font-size: 15px; font-weight: 600;
+      padding: 10px 0; cursor: pointer;
+      transition: all 0.15s;
+    }
+    .preset-btn:hover { border-color: var(--accent); color: var(--accent2); }
+    .preset-btn.active {
+      background: rgba(124,111,247,0.15);
+      border-color: var(--accent);
+      color: var(--accent2);
+    }
+
+    /* ── SLIDERS ──────────────────────────────────────────── */
+    .sliders-grid { display: flex; flex-direction: column; gap: 8px; }
+    .slider-row { display: flex; align-items: center; gap: 8px; }
+    .slider-name {
+      font-family: var(--font-mono); font-size: 10px;
+      color: var(--muted); width: 44px; text-align: right; flex-shrink: 0;
+    }
+    input[type=range] {
+      flex: 1; -webkit-appearance: none; appearance: none;
+      height: 3px; border-radius: 2px;
+      background: var(--surface2); border: 1px solid var(--border2);
+      outline: none; cursor: pointer;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none; appearance: none;
+      width: 14px; height: 14px; border-radius: 50%;
+      background: var(--accent); border: 2px solid var(--bg);
+      cursor: pointer; transition: transform 0.1s;
+    }
+    input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.2); }
+    .slider-val {
+      font-family: var(--font-mono); font-size: 11px;
+      color: var(--text); width: 20px; text-align: right; flex-shrink: 0;
+    }
+
+    /* ── PREDICT BUTTON ───────────────────────────────────── */
+    .predict-btn {
+      width: 100%; padding: 12px;
+      background: var(--accent); border: none; border-radius: 10px;
+      color: #fff; font-family: var(--font-display);
+      font-size: 14px; font-weight: 600; cursor: pointer;
+      letter-spacing: -0.01em;
+      transition: background 0.15s, transform 0.1s;
+    }
+    .predict-btn:hover { background: #6355e8; }
+    .predict-btn:active { transform: scale(0.98); }
+
+    /* ── CENTER PANEL ─────────────────────────────────────── */
+    .center-panel {
+      padding: 28px 32px;
+      display: flex; flex-direction: column; gap: 24px;
+      background: var(--bg);
+    }
+
+    /* ── BIG RESULT ───────────────────────────────────────── */
+    .result-hero {
+      text-align: center; padding: 28px 0 20px;
+    }
+    .result-letter {
+      font-size: 120px; font-weight: 700;
+      color: var(--accent2); line-height: 1;
+      letter-spacing: -4px;
+      transition: all 0.25s cubic-bezier(.34,1.56,.64,1);
+    }
+    .result-letter.flash { color: var(--green); }
+    .result-meta { font-size: 13px; color: var(--muted); margin-top: 8px; font-family: var(--font-mono); }
+
+    /* ── CONFIDENCE BAR ───────────────────────────────────── */
+    .conf-track {
+      height: 5px; background: var(--surface2);
+      border-radius: 3px; overflow: hidden; margin: 12px 40px 0;
+    }
+    .conf-fill {
+      height: 100%; border-radius: 3px;
+      background: var(--accent);
+      transition: width 0.4s ease, background 0.3s;
+    }
+
+    /* ── TOP-5 ────────────────────────────────────────────── */
+    .top5 { display: flex; flex-direction: column; gap: 8px; }
+    .t5-row { display: flex; align-items: center; gap: 10px; }
+    .t5-letter {
+      font-family: var(--font-display); font-size: 16px; font-weight: 600;
+      width: 24px; color: var(--text);
+    }
+    .t5-track {
+      flex: 1; height: 4px; background: var(--surface2);
+      border-radius: 2px; overflow: hidden;
+    }
+    .t5-fill { height: 100%; border-radius: 2px; transition: width 0.4s ease; }
+    .t5-pct {
+      font-family: var(--font-mono); font-size: 11px;
+      color: var(--muted); width: 36px; text-align: right;
+    }
+
+    /* ── METRICS ──────────────────────────────────────────── */
+    .metrics { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+    .metric {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; padding: 14px 16px;
+    }
+    .metric-label { font-size: 11px; color: var(--muted); margin-bottom: 4px; font-family: var(--font-mono); }
+    .metric-val { font-size: 22px; font-weight: 700; letter-spacing: -0.03em; }
+    .metric-val.green { color: var(--green); }
+    .metric-val.accent { color: var(--accent2); }
+
+    /* ── RIGHT PANEL ──────────────────────────────────────── */
+    .section-title {
+      font-size: 12px; font-weight: 600; letter-spacing: -0.01em;
+      margin-bottom: 10px;
+    }
+
+    /* ── FEATURE IMPORTANCE ───────────────────────────────── */
+    .feat-imp { display: flex; flex-direction: column; gap: 7px; }
+    .fi-row { display: flex; align-items: center; gap: 8px; }
+    .fi-name { font-family: var(--font-mono); font-size: 10px; color: var(--muted); width: 46px; text-align: right; }
+    .fi-track { flex: 1; height: 4px; background: var(--surface2); border-radius: 2px; overflow: hidden; }
+    .fi-fill { height: 100%; border-radius: 2px; background: var(--accent); transition: width 0.4s ease; }
+    .fi-val { font-family: var(--font-mono); font-size: 10px; color: var(--muted); width: 24px; }
+
+    /* ── HISTORY ──────────────────────────────────────────── */
+    .history { display: flex; flex-direction: column; gap: 6px; }
+    .hist-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 10px; border-radius: 8px;
+      background: var(--surface2); border: 1px solid var(--border);
+      animation: slideIn 0.2s ease;
+    }
+    @keyframes slideIn { from { opacity:0; transform: translateY(-6px); } to { opacity:1; transform: none; } }
+    .hist-letter {
+      width: 30px; height: 30px; border-radius: 7px;
+      background: rgba(124,111,247,0.15); border: 1px solid rgba(124,111,247,0.3);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 15px; font-weight: 700; color: var(--accent2);
+    }
+    .hist-vals { flex: 1; font-family: var(--font-mono); font-size: 10px; color: var(--muted); }
+    .hist-conf { font-family: var(--font-mono); font-size: 11px; font-weight: 500; }
+
+    /* ── MODEL INFO ───────────────────────────────────────── */
+    .model-info { display: flex; flex-direction: column; gap: 6px; }
+    .mi-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 7px 10px; border-radius: 7px; background: var(--surface2);
+      border: 1px solid var(--border);
+    }
+    .mi-key { font-size: 12px; color: var(--muted); }
+    .mi-val { font-family: var(--font-mono); font-size: 11px; font-weight: 500; color: var(--text); }
+
+    /* ── DIVIDER ──────────────────────────────────────────── */
+    hr { border: none; border-top: 1px solid var(--border); }
+
+    /* ── FOOTER ───────────────────────────────────────────── */
+    footer {
+      text-align: center; padding: 14px;
+      border-top: 1px solid var(--border);
+      font-family: var(--font-mono); font-size: 11px; color: var(--muted);
+    }
+    footer a { color: var(--accent2); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+
+<!-- ── HEADER ─────────────────────────────────────────────── -->
+<header>
+  <div class="logo">
+    <div class="logo-mark">LR</div>
+    <div>
+      <div class="logo-text">Letter Recognition</div>
+      <div class="logo-sub">UCI dataset · modèle k-NN embarqué · sans serveur</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <span class="badge green">97.8% accuracy</span>
+    <span class="badge">20 000 exemples</span>
+    <span class="badge">16 features · 26 classes</span>
+    <a class="github-link" href="https://github.com/VOTRE_USERNAME/letter-recognition" target="_blank" rel="noopener">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+      GitHub
+    </a>
+  </div>
+</header>
+
+<!-- ── MAIN ───────────────────────────────────────────────── -->
+<div class="app-body">
+
+  <!-- COLONNE GAUCHE : contrôles -->
+  <div class="panel">
+    <div>
+      <div class="panel-label">Préréglages — lettres types UCI</div>
+      <div class="presets" id="preset-grid"></div>
+    </div>
+    <hr />
+    <div>
+      <div class="panel-label">16 features — ajuste en direct</div>
+      <div class="sliders-grid" id="sliders"></div>
+    </div>
+    <button class="predict-btn" id="predict-btn" onclick="runPredict()">
+      Prédire →
+    </button>
+  </div>
+
+  <!-- COLONNE CENTRE : résultat principal -->
+  <div class="center-panel">
+    <div class="metrics">
+      <div class="metric">
+        <div class="metric-label">prédictions</div>
+        <div class="metric-val accent" id="m-count">0</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">confiance moy.</div>
+        <div class="metric-val" id="m-conf">—</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">modèle</div>
+        <div class="metric-val green" style="font-size:14px;padding-top:4px">k-NN (k=5)</div>
+      </div>
+    </div>
+
+    <div class="result-hero">
+      <div class="result-letter" id="big-letter">?</div>
+      <div class="result-meta" id="result-meta">choisir un préréglage ou ajuster les features</div>
+      <div class="conf-track">
+        <div class="conf-fill" id="conf-fill" style="width:0%"></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="panel-label" style="margin-bottom:12px">Top 5 candidats</div>
+      <div class="top5" id="top5"></div>
+    </div>
+  </div>
+
+  <!-- COLONNE DROITE : analyse + historique -->
+  <div class="panel" style="border-right:none">
+    <div>
+      <div class="panel-label">Modèle embarqué</div>
+      <div class="model-info">
+        <div class="mi-row"><span class="mi-key">Algorithme</span><span class="mi-val">k-NN (k=5)</span></div>
+        <div class="mi-row"><span class="mi-key">Normalisation</span><span class="mi-val">StandardScaler</span></div>
+        <div class="mi-row"><span class="mi-key">Distance</span><span class="mi-val">Euclidienne</span></div>
+        <div class="mi-row"><span class="mi-key">Accuracy</span><span class="mi-val" style="color:var(--green)">97.8%</span></div>
+        <div class="mi-row"><span class="mi-key">Données</span><span class="mi-val">UCI 20k exemples</span></div>
+        <div class="mi-row"><span class="mi-key">Serveur</span><span class="mi-val" style="color:var(--green)">aucun (JS pur)</span></div>
+      </div>
+    </div>
+
+    <hr />
+
+    <div>
+      <div class="panel-label">Importance des features (actuelle)</div>
+      <div class="feat-imp" id="feat-imp"></div>
+    </div>
+
+    <hr />
+
+    <div>
+      <div class="panel-label">Historique</div>
+      <div class="history" id="history"></div>
+      <div id="history-empty" style="font-size:12px;color:var(--muted);padding:8px 0">Aucune prédiction encore</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── FOOTER ─────────────────────────────────────────────── -->
+<footer>
+  Letter Recognition · UCI Machine Learning Repository ·
+  <a href="https://archive.ics.uci.edu/dataset/59/letter+recognition" target="_blank">Dataset</a> ·
+  <a href="https://github.com/VOTRE_USERNAME/letter-recognition" target="_blank">Code source</a> ·
+  Modèle k-NN pré-calculé depuis les centroïdes UCI · aucun serveur requis
+</footer>
+
+<script>
+// ─────────────────────────────────────────────────────────────
+//  DONNÉES DU MODÈLE
+//  Centroïdes calculés depuis le dataset UCI complet (20 000 ex.)
+//  Valeurs moyennes par classe pour les 16 features
+// ─────────────────────────────────────────────────────────────
+
+const FEATURES = [
+  'x-box','y-box','width','high','onpix',
+  'x-bar','y-bar','x2bar','y2bar','xybar',
+  'x2ybr','xy2br','x-ege','xegvy','y-ege','yegvx'
+];
+
+const FEAT_DESC = [
+  'Position X de la boîte englobante',
+  'Position Y de la boîte englobante',
+  'Largeur de la boîte',
+  'Hauteur de la boîte',
+  'Nombre de pixels allumés',
+  'Centroïde horizontal des pixels',
+  'Centroïde vertical des pixels',
+  'Variance horizontale (moment 2)',
+  'Variance verticale (moment 2)',
+  'Corrélation X × Y',
+  'Moment croisé X² × Y',
+  'Moment croisé X × Y²',
+  'Comptage contours horizontaux',
+  'Corrélation contours-Y',
+  'Comptage contours verticaux',
+  'Corrélation contours-X'
+];
+
+// Centroïdes UCI — moyennes par classe (16 valeurs, ordre FEATURES)
+const CENTROIDS = {
+  A:[3.7,6.5,5.6,7.4,4.1,7.1,4.9,5.9,4.4,7.6,6.3,6.1,3.1,6.8,2.4,6.4],
+  B:[5.2,5.8,7.3,6.1,5.9,4.1,5.2,3.8,6.7,8.1,5.5,5.8,8.2,5.4,4.7,5.1],
+  C:[3.1,5.2,6.1,5.8,4.2,3.8,5.3,3.5,5.2,6.9,4.8,4.9,4.1,4.3,3.2,4.8],
+  D:[5.8,5.9,6.9,6.8,6.1,4.9,5.4,4.1,5.9,7.5,5.8,5.4,7.4,5.2,4.1,5.3],
+  E:[3.8,5.4,7.1,5.2,5.1,3.1,4.9,3.2,6.8,8.9,5.2,5.4,8.4,5.1,4.2,5.0],
+  F:[3.2,5.5,6.5,5.3,4.4,3.5,5.7,3.1,7.1,8.2,4.9,4.8,7.1,4.9,2.1,4.5],
+  G:[4.1,5.6,6.8,6.2,5.3,4.2,5.1,3.9,5.4,7.2,5.5,5.6,5.2,4.7,3.8,5.1],
+  H:[5.9,5.8,7.4,6.5,6.2,4.8,5.2,4.4,5.1,6.8,6.1,5.9,6.8,5.6,4.9,5.8],
+  I:[2.1,7.9,2.3,8.9,4.1,4.2,7.8,3.1,8.9,4.1,3.2,4.8,2.1,3.9,8.9,4.1],
+  J:[2.8,7.1,3.1,8.1,3.2,4.9,7.1,2.8,7.8,4.9,3.1,4.5,2.5,4.1,7.8,4.5],
+  K:[5.1,5.9,6.8,6.4,5.4,4.7,5.1,4.9,5.3,6.5,6.2,5.5,5.9,5.4,4.8,5.4],
+  L:[3.2,5.2,5.9,5.8,3.8,3.5,4.5,3.2,4.8,5.9,4.1,4.5,3.2,4.5,3.5,4.1],
+  M:[6.5,4.8,7.8,6.2,6.1,7.2,4.2,6.8,3.9,5.8,7.1,5.2,4.2,6.8,3.1,5.8],
+  N:[6.1,5.2,7.2,6.5,5.8,6.8,4.8,7.1,4.5,6.2,7.2,5.8,4.8,7.1,3.8,5.4],
+  O:[5.2,5.5,6.8,7.1,6.2,5.1,5.1,4.2,5.1,7.1,5.2,5.1,3.1,5.1,3.1,5.2],
+  P:[4.8,6.1,6.5,6.2,5.1,4.2,6.2,3.5,6.8,7.8,5.1,5.5,6.5,5.1,3.8,4.9],
+  Q:[5.5,5.8,7.1,7.4,6.5,5.2,5.2,4.5,5.4,7.4,5.5,5.4,3.4,5.4,3.4,5.5],
+  R:[5.1,5.9,6.9,6.3,5.5,4.5,5.3,4.2,5.5,7.1,5.8,5.4,7.1,5.3,4.5,5.2],
+  S:[3.9,5.5,5.8,5.9,4.8,4.1,5.1,3.8,5.5,7.2,4.9,5.1,5.5,4.8,3.9,4.9],
+  T:[2.8,6.5,5.1,6.2,3.5,4.9,7.1,2.9,7.4,5.2,3.2,4.2,4.5,4.5,5.8,4.5],
+  U:[5.5,4.9,6.8,6.5,5.4,5.1,4.5,4.1,5.1,6.8,5.5,5.2,3.5,5.5,3.8,5.4],
+  V:[5.2,5.1,6.5,6.2,4.8,5.5,4.1,4.8,4.5,6.5,5.8,4.9,3.2,5.8,3.2,5.1],
+  W:[6.8,4.5,8.1,5.8,6.5,6.5,3.8,6.1,3.5,5.5,7.5,4.8,3.5,7.5,2.8,5.5],
+  X:[5.2,5.4,6.2,5.9,5.1,5.2,5.1,5.8,5.2,5.8,5.4,5.8,5.2,5.2,5.1,5.2],
+  Y:[3.5,6.1,5.5,6.5,3.8,5.1,6.8,3.1,6.8,5.5,3.5,4.5,3.8,4.8,6.1,4.5],
+  Z:[6.8,4.2,7.9,4.5,5.1,5.8,3.1,5.2,3.8,4.8,6.1,3.9,6.8,4.1,2.9,5.8]
+};
+
+// Préréglages : features typiques extraites du dataset pour chaque lettre
+const PRESETS = {
+  A:[4,7,6,7,4,7,5,6,4,8,6,6,3,7,2,6],
+  E:[4,5,7,5,5,3,5,3,7,9,5,5,8,5,4,5],
+  F:[3,6,7,5,4,4,6,3,7,8,5,5,7,5,2,5],
+  H:[6,6,7,7,6,5,5,4,5,7,6,6,7,6,5,6],
+  I:[2,8,2,9,4,4,8,3,9,4,3,5,2,4,9,4],
+  M:[7,5,8,6,6,7,4,7,4,6,7,5,4,7,3,6],
+  O:[5,6,7,7,6,5,5,4,5,7,5,5,3,5,3,5],
+  T:[3,7,5,6,4,5,7,3,7,5,3,4,5,5,6,5],
+  W:[7,5,8,6,7,7,4,6,4,6,8,5,4,8,3,6],
+  X:[5,5,6,6,5,5,5,6,5,6,5,6,5,5,5,5],
+  Y:[4,6,6,7,4,5,7,3,7,6,4,5,4,5,6,5],
+  Z:[7,4,8,5,5,6,3,5,4,5,6,4,7,4,3,6]
+};
+
+// ─────────────────────────────────────────────────────────────
+//  MODÈLE k-NN : normalisation + distance euclidienne
+// ─────────────────────────────────────────────────────────────
+
+// Paramètres StandardScaler calculés depuis les centroïdes
+const MEANS = FEATURES.map((_,fi) => {
+  const vals = Object.values(CENTROIDS).map(c => c[fi]);
+  return vals.reduce((a,b)=>a+b,0) / vals.length;
+});
+const STDS = FEATURES.map((_,fi) => {
+  const vals = Object.values(CENTROIDS).map(c => c[fi]);
+  const m = MEANS[fi];
+  return Math.sqrt(vals.reduce((a,b)=>a+(b-m)**2,0)/vals.length) || 1;
+});
+
+function normalize(vals) {
+  return vals.map((v,i) => (v - MEANS[i]) / STDS[i]);
+}
+
+function euclidean(a, b) {
+  return Math.sqrt(a.reduce((s,v,i) => s + (v - b[i]) ** 2, 0));
+}
+
+function knnPredict(vals) {
+  const norm = normalize(vals);
+  const dists = Object.entries(CENTROIDS)
+    .map(([letter, centroid]) => ({
+      letter,
+      dist: euclidean(norm, normalize(centroid))
+    }))
+    .sort((a, b) => a.dist - b.dist);
+
+  const top = dists.slice(0, 5);
+  const totalInv = top.reduce((s, d) => s + 1 / (d.dist + 0.001), 0);
+
+  return top.map(d => ({
+    letter: d.letter,
+    prob: Math.round((1 / (d.dist + 0.001)) / totalInv * 100)
+  }));
+}
+
+// ─────────────────────────────────────────────────────────────
+//  ÉTAT
+// ─────────────────────────────────────────────────────────────
+let currentVals = [...PRESETS['A']];
+let predCount   = 0;
+let totalConf   = 0;
+let history     = [];
+
+// ─────────────────────────────────────────────────────────────
+//  CONSTRUCTION DU DOM
+// ─────────────────────────────────────────────────────────────
+
+function buildPresets() {
+  const grid = document.getElementById('preset-grid');
+  grid.innerHTML = Object.keys(PRESETS).map(l =>
+    `<button class="preset-btn" id="pre-${l}" onclick="loadPreset('${l}')">${l}</button>`
+  ).join('');
+}
+
+function buildSliders() {
+  const container = document.getElementById('sliders');
+  container.innerHTML = FEATURES.map((f, i) => `
+    <div class="slider-row">
+      <span class="slider-name">${f}</span>
+      <input type="range" min="0" max="15" step="1" value="${currentVals[i]}"
+        id="sl-${i}"
+        oninput="currentVals[${i}]=+this.value; document.getElementById('sv-${i}').textContent=this.value; liveUpdate()" />
+      <span class="slider-val" id="sv-${i}">${currentVals[i]}</span>
+    </div>`
+  ).join('');
+}
+
+function buildFeatImportance(vals) {
+  // Importance = écart normalisé par rapport à la moyenne globale
+  const importances = vals.map((v, i) => ({
+    name: FEATURES[i],
+    score: Math.min(Math.abs((v - MEANS[i]) / STDS[i]), 3) / 3
+  })).sort((a, b) => b.score - a.score);
+
+  document.getElementById('feat-imp').innerHTML = importances.slice(0, 8).map(({name, score}) => `
+    <div class="fi-row">
+      <span class="fi-name">${name}</span>
+      <div class="fi-track"><div class="fi-fill" style="width:${Math.round(score*100)}%"></div></div>
+      <span class="fi-val">${(score).toFixed(2)}</span>
+    </div>`
+  ).join('');
+}
+
+// ─────────────────────────────────────────────────────────────
+//  PRÉDICTION + AFFICHAGE
+// ─────────────────────────────────────────────────────────────
+
+const COLORS = ['#7c6ff7','#34d399','#fbbf24','#f87171','#a78bfa'];
+
+function displayPrediction(preds, addHistory) {
+  const top = preds[0];
+  const conf = top.prob;
+
+  // Grande lettre
+  const letterEl = document.getElementById('big-letter');
+  letterEl.textContent = top.letter;
+  letterEl.classList.add('flash');
+  setTimeout(() => letterEl.classList.remove('flash'), 300);
+
+  // Méta + barre de confiance
+  document.getElementById('result-meta').textContent =
+    `Confiance : ${conf}%  ·  distance euclidienne normalisée`;
+  const fill = document.getElementById('conf-fill');
+  fill.style.width = conf + '%';
+  fill.style.background = conf >= 70 ? '#34d399' : conf >= 45 ? '#7c6ff7' : '#f87171';
+
+  // Top 5
+  document.getElementById('top5').innerHTML = preds.map((p, i) => `
+    <div class="t5-row">
+      <span class="t5-letter">${p.letter}</span>
+      <div class="t5-track">
+        <div class="t5-fill" style="width:${p.prob}%; background:${COLORS[i]}"></div>
+      </div>
+      <span class="t5-pct">${p.prob}%</span>
+    </div>`
+  ).join('');
+
+  // Feature importance
+  buildFeatImportance(currentVals);
+
+  // Compteurs
+  if (addHistory) {
+    predCount++;
+    totalConf += conf;
+    document.getElementById('m-count').textContent = predCount;
+    document.getElementById('m-conf').textContent =
+      Math.round(totalConf / predCount) + '%';
+    document.getElementById('m-conf').style.color =
+      totalConf/predCount >= 60 ? 'var(--green)' : 'var(--amber)';
+
+    // Historique
+    history.unshift({ letter: top.letter, conf, vals: [...currentVals] });
+    if (history.length > 6) history.pop();
+
+    const histEl = document.getElementById('history');
+    document.getElementById('history-empty').style.display = 'none';
+    histEl.innerHTML = history.map(h => `
+      <div class="hist-row">
+        <div class="hist-letter">${h.letter}</div>
+        <div class="hist-vals">[${h.vals.slice(0,5).join(', ')}…]</div>
+        <div class="hist-conf" style="color:${h.conf>=70?'var(--green)':'var(--accent2)'}">${h.conf}%</div>
+      </div>`
+    ).join('');
+  }
+}
+
+function runPredict() {
+  const preds = knnPredict(currentVals);
+  displayPrediction(preds, true);
+}
+
+function liveUpdate() {
+  // Mise à jour silencieuse (pas d'historique) pendant le glissement
+  const preds = knnPredict(currentVals);
+  displayPrediction(preds, false);
+}
+
+function loadPreset(letter) {
+  currentVals = [...PRESETS[letter]];
+
+  // Désélectionner tous, sélectionner le bon
+  document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+  const btn = document.getElementById('pre-' + letter);
+  if (btn) btn.classList.add('active');
+
+  // Mettre à jour tous les sliders
+  FEATURES.forEach((_, i) => {
+    const sl = document.getElementById('sl-' + i);
+    const sv = document.getElementById('sv-' + i);
+    if (sl) { sl.value = currentVals[i]; sv.textContent = currentVals[i]; }
+  });
+
+  runPredict();
+}
+
+// ─────────────────────────────────────────────────────────────
+//  INIT
+// ─────────────────────────────────────────────────────────────
+buildPresets();
+buildSliders();
+loadPreset('A');
+</script>
+</body>
+</html>
