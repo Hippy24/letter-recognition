@@ -24,7 +24,7 @@ from sklearn.manifold import TSNE
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score
 
-# ─── CONFIG ──────────────────────────────────────────────────────────────────
+# CONFIG
 
 COLUMNS = [
     "lettr", "x-box", "y-box", "width", "high", "onpix",
@@ -43,7 +43,7 @@ PALETTE = [
 LETTER_TO_COLOR = {chr(65+i): PALETTE[i] for i in range(26)}
 
 
-# ─── DATA ────────────────────────────────────────────────────────────────────
+# DATA 
 
 def load_and_preprocess(path: str, sample_n: int = 5000):
     """Charge + normalise les données, prend un échantillon pour t-SNE."""
@@ -72,11 +72,11 @@ def load_and_preprocess(path: str, sample_n: int = 5000):
     return X_scaled, y, X_sample, y_sample, df
 
 
-# ─── PCA ─────────────────────────────────────────────────────────────────────
+# PCA
 
 def run_pca(X_scaled, y, output_dir: Path):
     """PCA complète : variance expliquée + projection 2D/3D."""
-    print("\n🔵 PCA en cours...")
+    print("\n PCA en cours...")
     pca_full = PCA().fit(X_scaled)
     explained = pca_full.explained_variance_ratio_
 
@@ -140,7 +140,7 @@ def run_pca(X_scaled, y, output_dir: Path):
     return X_pca, pca_full
 
 
-# ─── t-SNE ───────────────────────────────────────────────────────────────────
+# t-SNE
 
 def run_tsne(X_sample, y_sample, perplexity=40, output_dir: Path = None):
     """t-SNE 2D sur l'échantillon, avec annotation des centroïdes."""
@@ -271,7 +271,7 @@ def plot_kmeans_elbow(X_scaled, output_dir: Path):
     print(f"   Sauvegardé : {path}")
 
 
-# ─── MAIN ────────────────────────────────────────────────────────────────────
+# MAIN
 
 def main():
     parser = argparse.ArgumentParser(description="Clustering & dimensionality reduction")
@@ -302,7 +302,7 @@ def main():
     if args.method in ("cluster", "all"):
         plot_kmeans_elbow(X_scaled, output_dir)
 
-    print(f"\n✅ Terminé. Tous les graphiques dans : {output_dir}/")
+    print(f"\nTerminé. Tous les graphiques dans : {output_dir}/")
 
 
 if __name__ == "__main__":
