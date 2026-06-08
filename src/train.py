@@ -31,7 +31,7 @@ from sklearn.metrics import (
 import joblib
 
 
-# ─── CONFIG ──────────────────────────────────────────────────────────────────
+# CONFIG
 
 COLUMNS = [
     "lettr", "x-box", "y-box", "width", "high", "onpix",
@@ -63,7 +63,7 @@ PARAM_GRIDS = {
 }
 
 
-# ─── DATA ────────────────────────────────────────────────────────────────────
+# DATA
 
 def load_data(path: str) -> tuple:
     """Charge le CSV UCI Letter Recognition."""
@@ -90,7 +90,7 @@ def split_data(X, y, test_size=0.2, random_state=42):
     return X_train, X_test, y_train, y_test
 
 
-# ─── TRAINING ────────────────────────────────────────────────────────────────
+# TRAINING
 
 def train_model(name: str, X_train, y_train, tune_hp=False, cv=5):
     """Entraîne un modèle, avec optionnel GridSearchCV."""
@@ -128,7 +128,7 @@ def evaluate_model(model, X_test, y_test, name: str):
     return acc, y_pred
 
 
-# ─── VISUALISATIONS ──────────────────────────────────────────────────────────
+# VISUALISATIONS
 
 def plot_confusion_matrix(y_test, y_pred, name: str, output_dir: Path):
     """Matrice de confusion complète 26×26."""
@@ -210,7 +210,7 @@ def plot_model_comparison(results: dict, output_dir: Path):
     print(f"   Sauvegardé : {path}")
 
 
-# ─── MAIN ────────────────────────────────────────────────────────────────────
+# MAIN
 
 def main():
     parser = argparse.ArgumentParser(description="Letter Recognition ML Pipeline")
@@ -254,7 +254,7 @@ def main():
     if len(results) > 1:
         plot_model_comparison(results, output_dir)
 
-    print(f"\n✅ Terminé. Résultats dans : {output_dir}/")
+    print(f"\nTerminé. Résultats dans : {output_dir}/")
 
 
 if __name__ == "__main__":
