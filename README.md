@@ -1,4 +1,4 @@
-# 🔤 Letter Recognition — ML Classification
+# Letter Recognition - ML Classification
 
 > Reconnaissance automatique des 26 lettres de l'alphabet à partir de caractéristiques statistiques d'images, avec **97.8% de précision** (SVM RBF).
 
@@ -9,7 +9,7 @@
 
 ---
 
-## 📋 Vue d'ensemble
+## Vue d'ensemble
 
 Ce projet applique des techniques classiques de **machine learning supervisé** sur le dataset UCI *Letter Recognition* : 20 000 exemples de lettres (A–Z) encodées en 16 attributs statistiques (moments, densité de pixels, contours).
 
@@ -23,26 +23,9 @@ Ce projet applique des techniques classiques de **machine learning supervisé** 
 
 ---
 
-## 🗂️ Structure du projet
-
-```
-letter-recognition/
-├── data/
-│   └── letter-recognition.csv     # Dataset UCI (à télécharger)
-├── notebooks/
-│   └── letter_recognition.ipynb   # Analyse complète & visualisations
-├── src/
-│   ├── train.py                   # Pipeline d'entraînement
-│   ├── clustering.py              # PCA, t-SNE, KMeans
-│   └── predict.py                 # Inférence & API de prédiction
-├── outputs/                        # Modèles .pkl & graphiques générés
-├── requirements.txt
-└── README.md
-```
-
 ---
 
-## 🚀 Démarrage rapide
+## Démarrage rapide
 
 ### 1. Installation
 
@@ -145,7 +128,7 @@ jupyter notebook notebooks/letter_recognition.ipynb
 
 ---
 
-## 💡 Points d'apprentissage clés
+## Points d'apprentissage clés
 
 - **Pipeline sklearn** : encapsulation scaler + classifieur pour éviter le data leakage
 - **Cross-validation stratifiée** : évaluation robuste sur données multi-classes
@@ -155,7 +138,7 @@ jupyter notebook notebooks/letter_recognition.ipynb
 
 ---
 
-## 📈 Pistes d'amélioration
+## Pistes d'amélioration
 
 - [ ] Features engineered (ratios, symétrie)
 - [ ] MLP / réseau de neurones profond
@@ -165,7 +148,7 @@ jupyter notebook notebooks/letter_recognition.ipynb
 
 ---
 
-## 📚 Référence
+## Référence
 
 Frey, P. W., & Slate, D. J. (1991). *Letter Recognition Using Holland-Style Adaptive Classifiers*. Machine Learning, 6(2), 161–182.
 
